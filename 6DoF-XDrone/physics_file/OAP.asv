@@ -1,7 +1,0 @@
-function [T_control] = OAP(t, q)
-
-    phi = q(:,3);
-
-T_control = [0;0;0.1] * sin(phi);
-
-end
