@@ -39,8 +39,9 @@ fprintf('----------------------------------\n')
 %% ------------- PLOTTING OPTIONS -----------------------------------------
 sim.options.propeller_on = false;
 sim.options.mBlades_on = false;
+sim.options.control_law = @SPL;     % choose @OAP or @SPL
 
-sim.options.body_plotting = false;
+sim.options.body_plotting = true;
 sim.options.non_rotating_plotting = true;
 sim.options.test_plotting = false;
 sim.options.live_plotting_calculation = false; 
