@@ -1,4 +1,4 @@
-function [F_b, M_b] = dynamics(t, v_b, omega_b, R_ib, sim)
+function [F_b, M_b] = dynamics(t, v_b, omega_b, R_ib, sim, q)
 % DYNAMICS Compute total forces and moments for 6DoF rigid body
 %
 % Inputs:
@@ -152,8 +152,8 @@ function [F_b, M_b] = dynamics(t, v_b, omega_b, R_ib, sim)
 
     % Rotating drag / Friction torque
     T_friction = sim.prop.f_coeff*(pi*sim.prop.rho*omega_b(1)^2*sim.prop.span^4*sim.prop.chord)*[1;0;0];
-
-    T_control = OAP(t, q); % choose OAP or SPL
+    
+    T_control = sim.options.control_law(t, q);
 
     % Add all the moments
     M_b = M_aero + Q_prop - T_friction + mBlades_Torque + sim.aero.Mext(t) + T_control;
