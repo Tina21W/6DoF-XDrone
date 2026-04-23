@@ -14,7 +14,7 @@ function dx = sixDoF_wrapper(t, x, sim)
     R_ib = R_bi';            % R_ib = inertial -> body
       
     % Dynamics (calculates body forces and moments)
-    [F_b, M_b] = dynamics(t, v_b, omega_b, R_ib, sim); 
+    [F_b, M_b] = dynamics(t, v_b, omega_b, R_ib, sim, q); 
     
     % Kinematics (calculates derivatives of the states)
     [v_dot_b, omega_dot_b, q_dot, pos_dot_i] = kinematics(v_b, omega_b, F_b, M_b, q, R_bi, sim);
