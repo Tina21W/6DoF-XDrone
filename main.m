@@ -36,10 +36,13 @@ fprintf('Trim Velocity: %.2f m/s\n', sim.prop.V_trim)
 fprintf('Trim Thrust: %.3f N\n', sim.prop.Thrust_req)
 fprintf('----------------------------------\n')
 
+%% ------------- CONTROL OPTIONS -----------------------------------------
+sim.options.control.control_law = @OAP;    % choose @OAP or @SPL
+sim.options.control.waypoint = [-50; 120; -60]
+
 %% ------------- PLOTTING OPTIONS -----------------------------------------
 sim.options.propeller_on = false;
 sim.options.mBlades_on = false;
-sim.options.control_law = @SPL;     % choose @OAP or @SPL
 
 sim.options.body_plotting = true;
 sim.options.non_rotating_plotting = true;
