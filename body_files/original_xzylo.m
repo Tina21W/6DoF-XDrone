@@ -24,7 +24,7 @@ function [properties,aerodynamics,initialization] = original_xzylo()
     % ------------------------- Environmental Properties ---------------------------
     properties.rho = 1.225;
     properties.V_wind_i = [0; 0; 0]; % wind velocity in inertial frame [m/s]
-    properties.g = 9.81;
+    properties.g = 0;
        
     %% Aerodynamics Group
     %----------------------- Aerodynamic coefficient functions --------------------------
@@ -44,7 +44,7 @@ function [properties,aerodynamics,initialization] = original_xzylo()
     aerodynamics.Mext = @(t) (t >= 0 && t <= 30) * [0; 0; 0]; 
 
     % ------------------------- Initialization states ------------------------------------
-    initialization.launch_angle = 12; % launch angle in degrees
+    initialization.launch_angle = 0; % launch angle in degrees
     initialization.V_mag = 20; % Magnitude of the launch velocity
     initialization.Omega_mag = 40; % Rotational speed at launch [RPS]
     initialization.AoA = 0;    
@@ -53,7 +53,7 @@ function [properties,aerodynamics,initialization] = original_xzylo()
     initialization.omega0 = [2*pi*initialization.Omega_mag, 0, 0]; % initial rotational velocity vector (p,q,r)_0  [rad/s]
     initialization.euler0 = [deg2rad(0), deg2rad(initialization.launch_angle), deg2rad(0)]; %[yaw pitch roll];   % [psi theta phi]
     initialization.quat0  = eul2quat(initialization.euler0);   % returns [w x y z]
-    initialization.pos0 = [0 0 -1.5]; % initial position in inertial frame [m]
+    initialization.pos0 = [0 0 -15]; % initial position in inertial frame [m]
     initialization.tf = 30; %maximum simulation time
    
 end

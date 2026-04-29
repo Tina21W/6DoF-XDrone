@@ -97,7 +97,7 @@ function [properties,aerodynamics,initialization] = x_Drone()
     % ------------------------- Initialization states ------------------------------------
     initialization.launch_angle = 12; % launch angle in degrees
     initialization.V_mag = 15; % Magnitude of the launch velocity
-    initialization.Omega_mag = 0; % Rotational speed at launch [RPS]
+    initialization.Omega_mag = 40; % Rotational speed at launch [RPS]
     initialization.AoA = 0;    
 
     initialization.v0 = [initialization.V_mag*cosd(initialization.AoA),  0  , initialization.V_mag*sind(initialization.AoA)]; % initial velocity vector (u,v,w)_0   [m/s]
