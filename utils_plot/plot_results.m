@@ -178,16 +178,7 @@ function plot_results(t, x, sim, SIM_DATA)
         legend('M_x','M_y','M_z');
         grid on; title('Moments in body frame');
 
-        % Control torques
-        figure('Name', 'Phi and T_control')
-        hold on
-        plot(SIM_DATA.t, SIM_DATA.phi, 'LineWidth', 1.5);
-        plot(SIM_DATA.t, SIM_DATA.T_control_x, 'LineWidth', 1.5);
-        plot(SIM_DATA.t, SIM_DATA.T_control_y, 'LineWidth', 1.5);
-        plot(SIM_DATA.t, SIM_DATA.T_control_z, 'LineWidth', 1.5);
-        xlabel('Time [s]'); ylabel('Phi and T_control');
-        legend('Phi','T_control_x','T_control_y','T_control_z');
-        grid on; title('Control torque in body frame');
+
     end
 
 

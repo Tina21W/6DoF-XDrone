@@ -184,15 +184,5 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     SIM_DATA.Mz_nr = -My_b' .* s_despun + Mz_b' .* c_despun;
     SIM_DATA.phi = phi;
 
-    SIM_DATA.T_control = zeros(N, 3);   % preallocate
-
-    for i = 1:N
-        quat_i = x(i, 7:10)';                 % quaternion at step i
-        SIM_DATA.T_control(i, :) = sim.options.control_law(t(i), quat_i)';  % `OAP` returns 3x1
-    end
-
-    SIM_DATA.T_control_x = SIM_DATA.T_control(:, 1);
-    SIM_DATA.T_control_y = SIM_DATA.T_control(:, 2);
-    SIM_DATA.T_control_z = SIM_DATA.T_control(:, 3);
 
 end
