@@ -1,6 +1,6 @@
 %%% Swashplateless rotor
 
-function [T_control] = SPL(t, q, T_matrix)
+function [T_control] = SPL(t, q, T_vector)
 
     % mode 1: Euler-roll version, breaks near the poles
     % mode 2: twist-quaternion version, breaks near 180 deg
@@ -37,7 +37,7 @@ function [T_control] = SPL(t, q, T_matrix)
             error('SPL:InvalidMode', 'SPL mode must be 1 or 2.');
     end
 
-    T_ds = T_matrix;           % T < 0.005 !!!
+    T_ds = T_vector;           % T < 0.005 !!!
     T_control = R_bds' * T_ds;
 
 end

@@ -29,10 +29,10 @@ function [T_vector] = controller(pos_i, v_b, waypoint, R_ib)
     error_b = R_ib * error_i;
 
     % Control parameters
-    T_max = 0.01;           % tune this
-    error_lim = pi/6;       % tune this
+    T_max = 0.015;         % tune this
+    error_lim = pi/2;      % tune this
 
-    G = T_max/error_lim;    % Gain
+    G = T_max/error_lim;   % Gain
 
     if delta > error_lim
         T_mag = T_max;
@@ -59,4 +59,3 @@ function [T_vector] = controller(pos_i, v_b, waypoint, R_ib)
     %fprintf('delta = %g\n', delta);
 
 end
-
