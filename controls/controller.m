@@ -1,14 +1,66 @@
-function [T_vector] = controller(pos_i, v_b, waypoint, R_ib)
-    % 3D Waypoint tracking control
+function [T_vector] = controller(pos_i, v_b, omega_b, ctrl, R_ib, sim)
+    % 3D velocity-direction PD control for sequential waypoint tracking
     % Inputs: pos_i = inertial position, v_b = body-frame velocity
-    %         waypoint = [x_wp; y_wp; z_wp], R_ib = inertial->body rotation
+    %         omega_b = body angular rate, ctrl = control options struct,
+    %         R_ib = inertial->body rotation, sim = simulation struct
     % Output: T_vector = [0; My; Mz] - torque in body frame y-z plane
 
-    wp = waypoint;
+    persistent wp_idx last_wp_idx print_counter;
+
+    if isfield(ctrl, 'waypoints')
+        waypoints = ctrl.waypoints;
+    else
+        waypoints = ctrl.waypoint;
+    end
+
+    if size(waypoints, 1) ~= 3
+        waypoints = waypoints';
+    end
+
+    N = size(waypoints, 2);
+    radius = 10;
+    if isfield(ctrl, 'waypoint_radius')
+        radius = ctrl.waypoint_radius;
+    end
+
+    if isempty(wp_idx) || wp_idx < 1 || wp_idx > N
+        wp_idx = 1;
+        last_wp_idx = 0;
+        print_counter = 0;
+    end
+
+    dist_to_current = norm(waypoints(:, wp_idx) - pos_i);
+    if dist_to_current < radius
+        if isfield(ctrl, 'loop') && ctrl.loop
+            wp_idx = mod(wp_idx, N) + 1;
+        else
+            wp_idx = min(wp_idx + 1, N);
+        end
+    end
+
+    if wp_idx ~= last_wp_idx
+        fprintf('[WP] Switched to WP%d/%d | pos=[%.1f, %.1f, %.1f] | dist_prev=%.1f m\n', ...
+            wp_idx, N, pos_i(1), pos_i(2), pos_i(3), dist_to_current);
+        last_wp_idx = wp_idx;
+    end
+
+    print_counter = print_counter + 1;
+    if mod(print_counter, 200) == 0
+        d = norm(waypoints(:, wp_idx) - pos_i);
+        fprintf('[WP] Targeting WP%d/%d | pos=[%.1f, %.1f, %.1f] | dist=%.1f m\n', ...
+            wp_idx, N, pos_i(1), pos_i(2), pos_i(3), d);
+    end
+
+    wp = waypoints(:, wp_idx);
 
     % Desired direction in inertial frame
-    desired_dir = wp - pos_i;
-    desired_dir = desired_dir / norm(desired_dir);
+    to_wp = wp - pos_i;
+    dist = norm(to_wp);
+    if dist < 1e-6
+        T_vector = [0; 0; 0];
+        return;
+    end
+    desired_dir = to_wp / dist;
 
     % Current direction - convert body velocity to inertial
     v_i = R_ib' * v_b;
@@ -29,8 +81,15 @@ function [T_vector] = controller(pos_i, v_b, waypoint, R_ib)
     error_b = R_ib * error_i;
 
     % Control parameters
-    T_max = 0.015;         % tune this
-    error_lim = pi/2;      % tune this
+    if isfield(sim.prop, 'Direction_control')
+        T_max = sim.prop.Direction_control.T_max;
+        error_lim = sim.prop.Direction_control.error_lim;
+        Kd = sim.prop.Direction_control.Kd;
+    else
+        T_max = 0.015;
+        error_lim = pi/2;
+        Kd = 0;
+    end
 
     G = T_max/error_lim;   % Gain
 
@@ -47,6 +106,13 @@ function [T_vector] = controller(pos_i, v_b, waypoint, R_ib)
         Ty = 0;
         Tz = 0;
     end
+
+    % Angular-rate damping turns the proportional direction controller into PD.
+    Ty = Ty - Kd * omega_b(2);
+    Tz = Tz - Kd * omega_b(3);
+
+    Ty = min(max(Ty, -T_max), T_max);
+    Tz = min(max(Tz, -T_max), T_max);
 
     T_vector = [0; Ty; Tz];
 
