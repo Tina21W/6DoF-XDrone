@@ -1,4 +1,4 @@
-function [v_dot_b, omega_dot_b, q_dot, pos_dot_i] = kinematics(v_b, omega_b, F_b, M_b, q, R_bi, sim)
+function [v_dot_b, omega_dot_b, q_dot, pos_dot_i, u_error_int_dot] = kinematics(v_b, omega_b, F_b, M_b, q, R_bi, sim, u_error_int)
 % KINEMATICS Compute translational and rotational derivatives for 6DoF
 %
 % Inputs:
@@ -18,6 +18,7 @@ function [v_dot_b, omega_dot_b, q_dot, pos_dot_i] = kinematics(v_b, omega_b, F_b
 
 
     % 1. Acceleration in the body frame (velocity derivatives)
+    %v_dot_b = [0;0;0];
     v_dot_b = F_b / sim.prop.mass_total - cross(omega_b, v_b);
    
     % 2. Angular acceleration calculation
@@ -28,19 +29,40 @@ function [v_dot_b, omega_dot_b, q_dot, pos_dot_i] = kinematics(v_b, omega_b, F_b
     if sim.options.propeller_on
         % 2. Angular acceleration calculation
         H_Motor = sim.prop.Motor.I * omega_b; 
-        omega_rotor = [sim.prop.Prop.omega; 0; 0] + omega_b; %Prop.omega is relative to drone
+        prop_omega_cmd = prop_speed_controller(v_b, sim, u_error_int);
+        omega_rotor = [prop_omega_cmd; 0; 0] + omega_b; % Prop omega is relative to drone
         H_Prop = sim.prop.Prop.I * omega_rotor;
     
         H_total = H_total +  H_Motor + H_Prop;
         I_total = I_total + sim.prop.Motor.I + sim.prop.Prop.I;
     end 
     
+     
     omega_dot_b = I_total \ (M_b - cross(omega_b, H_total));  
+    %omega_dot_b(1) = 0;                                         % constant rotation
 
     % 3. Quaternion derivative
     q_dot = 0.5 * omegaMat(omega_b) * q;
     
     % 4. Inertial velocity (for position integration)
     pos_dot_i = R_bi * v_b;
+
+    % 5. Speed-error integral for propeller PI control
+    if isfield(sim.prop.Prop, 'control')
+        u_error = sim.prop.Prop.control.u_des - v_b(1);
+        if isfield(sim.options, 'control') && isfield(sim.options.control, 'u_des')
+            u_error = sim.options.control.u_des - v_b(1);
+        end
+
+        int_min = sim.prop.Prop.control.int_min;
+        int_max = sim.prop.Prop.control.int_max;
+        if (u_error_int >= int_max && u_error > 0) || (u_error_int <= int_min && u_error < 0)
+            u_error_int_dot = 0;
+        else
+            u_error_int_dot = u_error;
+        end
+    else
+        u_error_int_dot = 0;
+    end
 
 end

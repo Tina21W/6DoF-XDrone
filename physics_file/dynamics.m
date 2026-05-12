@@ -1,4 +1,4 @@
-function [F_b, M_b] = dynamics(t, v_b, omega_b, q, pos_i, R_ib, sim); 
+function [F_b, M_b] = dynamics(t, v_b, omega_b, q, pos_i, R_ib, sim, u_error_int); 
 % DYNAMICS Compute total forces and moments for 6DoF rigid body
 %
 % Inputs:
@@ -90,11 +90,12 @@ function [F_b, M_b] = dynamics(t, v_b, omega_b, q, pos_i, R_ib, sim);
     if sim.options.propeller_on
         D = 2*sim.prop.Prop.radius;
 
-        n_rad_per_sec = abs(sim.prop.Prop.omega + omega_b(1));
-        J = (2* pi * u_no_sdslip) / (n_rad_per_sec * D);
+        prop_omega_cmd = prop_speed_controller(v_b, sim, u_error_int);
+        n_rad_per_sec = max(abs(prop_omega_cmd + omega_b(1)), 1e-6);
+        J = (2* pi * max(u_no_sdslip, 0)) / (n_rad_per_sec * D);
         
-        k_T = sim.prop.Prop.k_T_0 * (1 - (J / (3/3*0.955))^1.5);
-        k_Q = sim.prop.Prop.k_Q_0 * (1 - (0.7 * (J / (3/3*0.955))^1.33));
+        k_T = sim.prop.Prop.k_T_0 * max(0, 1 - (J / (3/3*0.955))^1.5);
+        k_Q = sim.prop.Prop.k_Q_0 * max(0, 1 - (0.7 * (J / (3/3*0.955))^1.33));
 
         T_prop = k_T * sim.prop.rho * (n_rad_per_sec^2 * D^4) / (2*pi)^2 * [1;0;0];
         
@@ -154,9 +155,8 @@ function [F_b, M_b] = dynamics(t, v_b, omega_b, q, pos_i, R_ib, sim);
     T_friction = sim.prop.f_coeff*(pi*sim.prop.rho*omega_b(1)^2*sim.prop.span^4*sim.prop.chord)*[1;0;0];
     
     % control
-    waypoint = sim.options.control.waypoint;
-    T_matrix = controller(pos_i, v_b, waypoint, R_ib); 
-    T_control = sim.options.control.control_law(t, q, T_matrix);
+    T_vector = controller(pos_i, v_b, omega_b, sim.options.control, R_ib, sim);
+    T_control = sim.options.control.control_law(t, q, T_vector);
 
     % Add all the moments
     M_b = M_aero + Q_prop - T_friction + mBlades_Torque + sim.aero.Mext(t) + T_control;
