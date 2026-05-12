@@ -78,12 +78,39 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     %% ================= PROPELLER =================
     if sim.options.propeller_on
         R = sim.prop.Prop.radius;
+
+        prop_omega_cmd = sim.prop.Prop.omega * ones(1, N);
+        if isfield(sim.prop.Prop, 'control')
+            prop_control = sim.prop.Prop.control;
+            u_des = prop_control.u_des;
+            if isfield(sim.options, 'control') && isfield(sim.options.control, 'u_des')
+                u_des = sim.options.control.u_des;
+            end
+            if size(x, 2) >= 14
+                u_error_int = x(:, 14)';
+            else
+                u_error_int = zeros(1, N);
+            end
+            u_error_int = min(max(u_error_int, prop_control.int_min), prop_control.int_max);
+
+            prop_spin_sign = sign(sim.prop.Prop.omega);
+            if prop_spin_sign == 0
+                prop_spin_sign = 1;
+            end
+
+            u_error = u_des - u;
+            prop_omega_delta = prop_control.omega_Kp .* u_error + prop_control.omega_Ki .* u_error_int;
+            prop_omega_mag = abs(sim.prop.Prop.omega) + prop_omega_delta;
+            prop_omega_mag = min(max(prop_omega_mag, prop_control.omega_min), ...
+                                 prop_control.omega_max);
+            prop_omega_cmd = prop_spin_sign .* prop_omega_mag;
+        end
     
         % Angular speed [rad/s]
-        n_rad_per_sec = abs(sim.prop.Prop.omega + p);
+        n_rad_per_sec = max(abs(prop_omega_cmd + p), 1e-6);
     
         % Advance ratio (correct, vector-safe form)
-        J = (pi * u_no_sdslip) ./ (n_rad_per_sec .* R);
+        J = (pi * max(u_no_sdslip, 0)) ./ (n_rad_per_sec .* R);
     
         % Advance correction (your empirical model)
         f_advance = max(0, 1 ...
@@ -103,6 +130,7 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     else
         Tx_prop = zeros(1, N);
         Qx_prop = zeros(1, N);
+        prop_omega_cmd = zeros(1, N);
     end
 
     %% ================= EXTERNAL FORCES =================
@@ -158,6 +186,8 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     SIM_DATA.Fx_b = Fx_b'; 
     SIM_DATA.Fy_b = Fy_b'; 
     SIM_DATA.Fz_b = Fz_b';
+    SIM_DATA.prop_omega_cmd = prop_omega_cmd';
+    SIM_DATA.prop_RPM_cmd = prop_omega_cmd' * 60 / (2*pi);
     
     SIM_DATA.Mx_no_sdslip = Mx_no_sd'; 
     SIM_DATA.My_no_sdslip = My_no_sd'; 

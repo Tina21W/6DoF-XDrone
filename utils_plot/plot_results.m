@@ -94,6 +94,27 @@ function plot_results(t, x, sim, SIM_DATA)
     % 8. 3D Trajectory
     figure('Name','Trajectory');
     plot3(pos(:,1), pos(:,2), pos(:,3), 'r','LineWidth',1.5);
+    hold on
+    if isfield(sim.options, 'control') && isfield(sim.options.control, 'waypoints')
+        wps = sim.options.control.waypoints;
+        if size(wps, 1) ~= 3
+            wps = wps';
+        end
+
+        plot3(wps(1,:), wps(2,:), wps(3,:), 'ko', ...
+            'MarkerFaceColor', 'y', ...
+            'MarkerSize', 6, ...
+            'DisplayName', 'Waypoints');
+
+        if isfield(sim.options.control, 'loop') && sim.options.control.loop
+            wps_line = [wps, wps(:,1)];
+        else
+            wps_line = wps;
+        end
+        plot3(wps_line(1,:), wps_line(2,:), wps_line(3,:), 'k--', ...
+            'LineWidth', 0.8, ...
+            'DisplayName', 'Waypoint path');
+    end
     xlabel('X [m]'); ylabel('Y [m]'); zlabel('Z [m]');
     grid on; axis equal; title('Trajectory in inertial frame');
     set(gca, 'YDir', 'reverse', 'ZDir', 'reverse');  % flip East and Down visually

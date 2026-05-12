@@ -73,10 +73,72 @@ view(ax_anim,45,20);
 % Plot full trajectory
 plot3(ax_anim,pos_i(:,1),pos_i(:,2),pos_i(:,3),'c--','DisplayName','Trajectory');
 
+%% --- Waypoint visualization ---
+if isfield(sim.options, 'control') && isfield(sim.options.control, 'waypoints')
+    wps = sim.options.control.waypoints;
+    if size(wps, 1) ~= 3
+        wps = wps';
+    end
+
+    N_wp = size(wps, 2);
+    colors_wp = lines(N_wp);
+
+    for k = 1:N_wp
+        wx = wps(1,k); wy = wps(2,k); wz = wps(3,k);
+        plot3(ax_anim, wx, wy, wz, 'o', ...
+            'MarkerSize', 10, ...
+            'MarkerFaceColor', colors_wp(k,:), ...
+            'MarkerEdgeColor', 'k', ...
+            'LineWidth', 1.1, ...
+            'DisplayName', sprintf('WP%d', k));
+
+        text(ax_anim, wx, wy, wz - sim.options.radius_visualization * 0.8, ...
+            sprintf('  WP%d', k), ...
+            'Color', colors_wp(k,:), ...
+            'FontSize', 9, ...
+            'FontWeight', 'bold', ...
+            'HitTest', 'off');
+    end
+
+    if isfield(sim.options.control, 'loop') && sim.options.control.loop
+        idx_seq = [1:N_wp, 1];
+    else
+        idx_seq = 1:N_wp;
+    end
+
+    for k = 1:length(idx_seq)-1
+        a = wps(:, idx_seq(k));
+        b = wps(:, idx_seq(k+1));
+        plot3(ax_anim, [a(1) b(1)], [a(2) b(2)], [a(3) b(3)], '--', ...
+            'Color', [0.6 0.6 0.6], ...
+            'LineWidth', 0.8, ...
+            'HandleVisibility', 'off');
+    end
+
+    if isfield(sim.options.control, 'waypoint_radius')
+        r = sim.options.control.waypoint_radius;
+        theta_circ = linspace(0, 2*pi, 60);
+        for k = 1:N_wp
+            cx = wps(1,k) + r*cos(theta_circ);
+            cy = wps(2,k) + r*sin(theta_circ);
+            cz = wps(3,k) * ones(size(theta_circ));
+            plot3(ax_anim, cx, cy, cz, '-', ...
+                'Color', colors_wp(k,:), ...
+                'LineWidth', 0.7, ...
+                'HandleVisibility', 'off');
+        end
+    end
+end
+
 %% --- 7. Compute extents (Uniform Box for Axis Equal) ---
-x_min = min(pos_i(:,1)); x_max = max(pos_i(:,1));
-y_min = min(pos_i(:,2)); y_max = max(pos_i(:,2));
-z_min = min(pos_i(:,3)); z_max = max(pos_i(:,3));
+extent_points = pos_i;
+if exist('wps', 'var')
+    extent_points = [extent_points; wps'];
+end
+
+x_min = min(extent_points(:,1)); x_max = max(extent_points(:,1));
+y_min = min(extent_points(:,2)); y_max = max(extent_points(:,2));
+z_min = min(extent_points(:,3)); z_max = max(extent_points(:,3));
 
 x_span = (x_max - x_min) + 2*r_magnified;
 y_span = (y_max - y_min) + 4*r_magnified;
