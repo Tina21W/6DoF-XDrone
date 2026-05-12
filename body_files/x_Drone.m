@@ -48,6 +48,19 @@ function [properties,aerodynamics,initialization] = x_Drone()
     properties.Prop.k_T_0 = 0.205;
     properties.Prop.k_P_0 = properties.Prop.k_T_0/1.5;
     properties.Prop.k_Q_0 = properties.Prop.k_P_0 / (2 * pi);
+
+    % Propeller speed controller
+    properties.Prop.control.omega_Kp = 1200;        % proportional gain [(rad/s)/(m/s)]
+    properties.Prop.control.omega_Ki = 500;         % integral gain [(rad/s)/(m)]
+    properties.Prop.control.int_min = -5;           % minimum integrated speed error [m]
+    properties.Prop.control.int_max = 5;            % maximum integrated speed error [m]
+    properties.Prop.control.omega_min = 0;          % minimum relative prop speed magnitude [rad/s]
+    properties.Prop.control.omega_max = 4000;       % maximum relative prop speed magnitude [rad/s]
+
+    % Velocity direction controller
+    properties.Direction_control.T_max = 0.015;     % maximum transverse control moment [Nm]
+    properties.Direction_control.error_lim = pi/2;  % direction error for maximum moment [rad]
+    properties.Direction_control.Kd = 0.002;        % angular-rate damping gain [Nm/(rad/s)]
      
     % Motor
     properties.Motor.mass = 3.54*1e-3;      % kg
@@ -82,6 +95,7 @@ function [properties,aerodynamics,initialization] = x_Drone()
     % Trim conditions 
     [properties.alpha_trim, properties.V_trim, properties.Thrust_req] = calculate_trim(properties.percentage_CoG_total, properties.mass_total*properties.g, properties.rho,...
                                                                                     properties.Area, aerodynamics.Xzylo.C_L, aerodynamics.Xzylo.C_D, aerodynamics.Xzylo.CoP_frac);
+    properties.Prop.control.u_des = properties.V_trim; % desired body x-axis speed from trim [m/s]
 
     % ------------------------- Motor Blades Aerodynamics ---------------------------
     [V_GRID, RPM_GRID, Torque_Map, Drag_Map] = generate_turbine_maps(properties);
@@ -95,7 +109,7 @@ function [properties,aerodynamics,initialization] = x_Drone()
     aerodynamics.Mext = @(t) (t >= 0 && t <= 30) * [0; 0; 0]; 
 
     % ------------------------- Initialization states ------------------------------------
-    initialization.launch_angle = 12; % launch angle in degrees
+    initialization.launch_angle = 0; % launch angle in degrees
     initialization.V_mag = 15; % Magnitude of the launch velocity
     initialization.Omega_mag = 40; % Rotational speed at launch [RPS]
     initialization.AoA = 0;    
@@ -104,7 +118,8 @@ function [properties,aerodynamics,initialization] = x_Drone()
     initialization.omega0 = [2*pi*initialization.Omega_mag, 0, 0]; % initial rotational velocity vector (p,q,r)_0  [rad/s]
     initialization.euler0 = [deg2rad(0), deg2rad(initialization.launch_angle), deg2rad(0)]; %[yaw pitch roll];   % [psi theta phi]
     initialization.quat0  = eul2quat(initialization.euler0);   % returns [w x y z]
-    initialization.pos0 = [0 0 -1.5]; % initial position in inertial frame [m]
+    initialization.pos0 = [0 0 -15]; % initial position in inertial frame [m]
+    initialization.u_error_int0 = 0; % integral of body x-axis speed error [m]
     initialization.tf = 30; %maximum simulation time
    
 end
