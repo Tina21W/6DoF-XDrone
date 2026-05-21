@@ -70,8 +70,9 @@ hold(ax_anim,'on'); grid(ax_anim,'on');
 xlabel(ax_anim,'North (m)'); ylabel(ax_anim,'East (m)'); zlabel(ax_anim,'Down (m)');
 set(ax_anim,'YDir','reverse','ZDir','reverse'); % NED frame
 view(ax_anim,45,20);
-% Plot full trajectory
-plot3(ax_anim,pos_i(:,1),pos_i(:,2),pos_i(:,3),'c--','DisplayName','Trajectory');
+
+% Initialize empty trajectory line to be drawn dynamically
+traj_plot = plot3(ax_anim, NaN, NaN, NaN, 'r-', 'LineWidth', 2, 'DisplayName', 'Trajectory');
 
 %% --- Waypoint visualization ---
 if isfield(sim.options, 'control') && isfield(sim.options.control, 'waypoints')
@@ -230,6 +231,11 @@ update_plot(current_step);
         
         % Move everything instantly via the GPU
         set(tform_vehicle, 'Matrix', M);
+
+        % --- NEW: Update trajectory line up to the current timestep ---
+        set(traj_plot, 'XData', pos_i(1:i, 1), ...
+                       'YData', pos_i(1:i, 2), ...
+                       'ZData', pos_i(1:i, 3));
         
         set(title_h,'String',sprintf('t = %.2f s (step %d/%d)',t(i),i,num_steps));
         if num_steps>1, set(slider_h,'Value',i); end

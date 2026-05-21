@@ -44,6 +44,17 @@ function plot_results(t, x, sim, SIM_DATA)
     xlabel('Time [s]'); ylabel('Angular rates [Hz]');
     legend('p','q','r'); grid on; title('Body angular rates');
 
+    % 2b. Combined plot: body x-velocity `u` and roll rate `p`
+    figure('Name','u and p');
+    yyaxis left
+    h1 = plot(t, u, 'b', 'LineWidth', 1.5);
+    ylabel('u [m/s]');
+    yyaxis right
+    h2 = plot(t, p/(2*pi), 'r', 'LineWidth', 1.5);
+    ylabel('p [Hz]');
+    xlabel('Time [s]'); grid on; title('Body x-velocity (u) and roll rate (p)');
+    legend([h1, h2], 'u', 'p');
+
     % 3. Euler angles
     figure('Name','Euler Angles (without roll)');
     plot(t, rad2deg([theta psi]), 'LineWidth', 1.5);
@@ -199,6 +210,15 @@ function plot_results(t, x, sim, SIM_DATA)
         legend('M_x','M_y','M_z');
         grid on; title('Moments in body frame');
 
+        % Controller torque vector before OAP
+        figure('Name', 'Controller torque vector y/z')
+        hold on
+        %plot(SIM_DATA.t, SIM_DATA.T_vector_y, 'g', 'LineWidth', 1.5);
+        %plot(SIM_DATA.t, SIM_DATA.T_vector_z, 'b', 'LineWidth', 1.5);
+        plot(SIM_DATA.t, SIM_DATA.T_vector_mag, 'k', 'LineWidth', 1.5);
+        xlabel('Time [s]'); ylabel('Torque [Nm]');
+        legend('T_{vector,y}','T_{vector,z}','|T_{vector}|');
+        grid on; title('Controller torque vector components before OAP');
 
     end
 

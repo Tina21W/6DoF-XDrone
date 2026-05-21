@@ -1,9 +1,11 @@
-function [T_vector] = controller(pos_i, v_b, omega_b, ctrl, R_ib, sim)
+function [T_vector, T_mag] = controller(pos_i, v_b, omega_b, ctrl, R_ib, sim)
     % 3D velocity-direction PD control for sequential waypoint tracking
     % Inputs: pos_i = inertial position, v_b = body-frame velocity
     %         omega_b = body angular rate, ctrl = control options struct,
     %         R_ib = inertial->body rotation, sim = simulation struct
-    % Output: T_vector = [0; My; Mz] - torque in body frame y-z plane
+    % Outputs:
+    %   T_vector = [0; My; Mz] - torque in body frame y-z plane
+    %   T_mag    = magnitude of the torque vector before any OAP scaling
 
     persistent wp_idx last_wp_idx print_counter;
 
@@ -86,7 +88,7 @@ function [T_vector] = controller(pos_i, v_b, omega_b, ctrl, R_ib, sim)
         error_lim = sim.prop.Direction_control.error_lim;
         Kd = sim.prop.Direction_control.Kd;
     else
-        T_max = 0.015;
+        T_max = 0.05;      % maximum torque
         error_lim = pi/2;
         Kd = 0;
     end

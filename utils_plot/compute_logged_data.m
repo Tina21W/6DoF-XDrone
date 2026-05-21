@@ -4,7 +4,7 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     
     % Extract states into 1 x N arrays
     u = x(:, 1)'; v = x(:, 2)'; w = x(:, 3)'; 
-    p = x(:, 4)'; % q_ang = x(:, 5); r = x(:, 6); 
+    p = x(:, 4)'; q = x(:, 5)'; r = x(:, 6)'; 
 
     % Quaternions to Rotation Matrices (N x 4 input -> 3 x 3 x N output)
     quat = x(:, 7:10);
@@ -140,6 +140,22 @@ function SIM_DATA = compute_logged_data(t, x, sim)
         M_ext(:, i) = sim.aero.Mext(t(i));
     end
 
+    %% ================= CONTROL TORQUE =================
+    T_vector = zeros(3, N);
+    T_vector_mag = zeros(1, N);
+    T_control = zeros(3, N);
+    if isfield(sim, 'options') && isfield(sim.options, 'control') && isfield(sim.options.control, 'control_law')
+        clear controller;
+        for i = 1:N
+            pos_i = x(i, 11:13)';
+            v_b = [u(i); v(i); w(i)];
+            omega_b = [p(i); q(i); r(i)];
+            R_ib_i = squeeze(R_ib(:, :, i));
+            [T_vector(:, i), T_vector_mag(i)] = controller(pos_i, v_b, omega_b, sim.options.control, R_ib_i, sim);
+            T_control(:, i) = sim.options.control.control_law(t(i), q_norm(i, :), T_vector(:, i));
+        end
+    end
+
     %% ================= TOTAL FORCES =================
     Fx_b = Fx_aero_b + Fx_g_b + Tx_prop + F_ext(1, :);
     Fy_b = Fy_aero_b + Fy_g_b + F_ext(2, :);
@@ -195,6 +211,11 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     SIM_DATA.Mx_b = Mx_b'; 
     SIM_DATA.My_b = My_b'; 
     SIM_DATA.Mz_b = Mz_b';
+    SIM_DATA.T_vector_y = T_vector(2, :)';
+    SIM_DATA.T_vector_z = T_vector(3, :)';
+    SIM_DATA.T_vector_mag = T_vector_mag(:);
+    SIM_DATA.T_control_y = T_control(2, :)';
+    SIM_DATA.T_control_z = T_control(3, :)';
     
     SIM_DATA.CL = C_L'; SIM_DATA.CD = C_D'; SIM_DATA.Cm = C_m';
     SIM_DATA.no_sdslip_angle = no_sdslip_angle'; 
