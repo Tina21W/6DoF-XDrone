@@ -4,7 +4,7 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     
     % Extract states into 1 x N arrays
     u = x(:, 1)'; v = x(:, 2)'; w = x(:, 3)'; 
-    p = x(:, 4)'; q = x(:, 5)'; r = x(:, 6)'; 
+    p = x(:, 4)'; % q_ang = x(:, 5); r = x(:, 6); 
 
     % Quaternions to Rotation Matrices (N x 4 input -> 3 x 3 x N output)
     quat = x(:, 7:10);
@@ -78,39 +78,12 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     %% ================= PROPELLER =================
     if sim.options.propeller_on
         R = sim.prop.Prop.radius;
-
-        prop_omega_cmd = sim.prop.Prop.omega * ones(1, N);
-        if isfield(sim.prop.Prop, 'control')
-            prop_control = sim.prop.Prop.control;
-            u_des = prop_control.u_des;
-            if isfield(sim.options, 'control') && isfield(sim.options.control, 'u_des')
-                u_des = sim.options.control.u_des;
-            end
-            if size(x, 2) >= 14
-                u_error_int = x(:, 14)';
-            else
-                u_error_int = zeros(1, N);
-            end
-            u_error_int = min(max(u_error_int, prop_control.int_min), prop_control.int_max);
-
-            prop_spin_sign = sign(sim.prop.Prop.omega);
-            if prop_spin_sign == 0
-                prop_spin_sign = 1;
-            end
-
-            u_error = u_des - u;
-            prop_omega_delta = prop_control.omega_Kp .* u_error + prop_control.omega_Ki .* u_error_int;
-            prop_omega_mag = abs(sim.prop.Prop.omega) + prop_omega_delta;
-            prop_omega_mag = min(max(prop_omega_mag, prop_control.omega_min), ...
-                                 prop_control.omega_max);
-            prop_omega_cmd = prop_spin_sign .* prop_omega_mag;
-        end
     
         % Angular speed [rad/s]
-        n_rad_per_sec = max(abs(prop_omega_cmd + p), 1e-6);
+        n_rad_per_sec = abs(sim.prop.Prop.omega + p);
     
         % Advance ratio (correct, vector-safe form)
-        J = (pi * max(u_no_sdslip, 0)) ./ (n_rad_per_sec .* R);
+        J = (pi * u_no_sdslip) ./ (n_rad_per_sec .* R);
     
         % Advance correction (your empirical model)
         f_advance = max(0, 1 ...
@@ -130,7 +103,6 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     else
         Tx_prop = zeros(1, N);
         Qx_prop = zeros(1, N);
-        prop_omega_cmd = zeros(1, N);
     end
 
     %% ================= EXTERNAL FORCES =================
@@ -138,22 +110,6 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     for i = 1:N
         F_ext(:, i) = sim.aero.Fext(t(i));
         M_ext(:, i) = sim.aero.Mext(t(i));
-    end
-
-    %% ================= CONTROL TORQUE =================
-    T_vector = zeros(3, N);
-    T_vector_mag = zeros(1, N);
-    T_control = zeros(3, N);
-    if isfield(sim, 'options') && isfield(sim.options, 'control') && isfield(sim.options.control, 'control_law')
-        clear controller;
-        for i = 1:N
-            pos_i = x(i, 11:13)';
-            v_b = [u(i); v(i); w(i)];
-            omega_b = [p(i); q(i); r(i)];
-            R_ib_i = squeeze(R_ib(:, :, i));
-            [T_vector(:, i), T_vector_mag(i)] = controller(pos_i, v_b, omega_b, sim.options.control, R_ib_i, sim);
-            T_control(:, i) = sim.options.control.control_law(t(i), q_norm(i, :), T_vector(:, i));
-        end
     end
 
     %% ================= TOTAL FORCES =================
@@ -202,8 +158,6 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     SIM_DATA.Fx_b = Fx_b'; 
     SIM_DATA.Fy_b = Fy_b'; 
     SIM_DATA.Fz_b = Fz_b';
-    SIM_DATA.prop_omega_cmd = prop_omega_cmd';
-    SIM_DATA.prop_RPM_cmd = prop_omega_cmd' * 60 / (2*pi);
     
     SIM_DATA.Mx_no_sdslip = Mx_no_sd'; 
     SIM_DATA.My_no_sdslip = My_no_sd'; 
@@ -211,11 +165,6 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     SIM_DATA.Mx_b = Mx_b'; 
     SIM_DATA.My_b = My_b'; 
     SIM_DATA.Mz_b = Mz_b';
-    SIM_DATA.T_vector_y = T_vector(2, :)';
-    SIM_DATA.T_vector_z = T_vector(3, :)';
-    SIM_DATA.T_vector_mag = T_vector_mag(:);
-    SIM_DATA.T_control_y = T_control(2, :)';
-    SIM_DATA.T_control_z = T_control(3, :)';
     
     SIM_DATA.CL = C_L'; SIM_DATA.CD = C_D'; SIM_DATA.Cm = C_m';
     SIM_DATA.no_sdslip_angle = no_sdslip_angle'; 

@@ -14,15 +14,14 @@ function options_integration = options_premaker(live_plotting_calculation, sim)
         setappdata(fig, 'sim', sim);
         %setappdata(fig, 'x0', x0);
         
-        % Define the names of your state derivatives
+        % Define the names of your 13 derivatives
         dx_names = {'du (Axial Accel)', 'dv (Lat Accel)', 'dw (Norm Accel)', ...
                     'dp (Roll Accel)', 'dq_ang (Pitch Accel)', 'dr (Yaw Accel)', ...
                     'dq0_rate', 'dq1_rate', 'dq2_rate', 'dq3_rate', ...
-                    'dx (Inertial Vel X)', 'dy (Inertial Vel Y)', 'dz (Inertial Vel Z)', ...
-                    'dInt_u (Speed Error Integral)'};
+                    'dx (Inertial Vel X)', 'dy (Inertial Vel Y)', 'dz (Inertial Vel Z)'};
 
         % Create line objects using animatedline for speed
-        for i = 1:numel(dx_names)
+        for i = 1:13
             ax(i) = nexttile;
             title(ax(i), dx_names{i});
             xlabel(ax(i), 't [s]');
