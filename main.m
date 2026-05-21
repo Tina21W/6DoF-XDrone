@@ -7,7 +7,7 @@ close all; clear; clc;
 
 %% ------------- INITIALIZATION -------------------------------------------
 % Select vehicle configuration
-vehicle_config = @x_Drone;  % Put the name of the body_file after @
+vehicle_config = @x_Drone;  % Put the name of the body_file after
 
 % Load configuration
 % ============================================
