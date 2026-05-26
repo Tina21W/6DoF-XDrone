@@ -1,10 +1,10 @@
-function [T_vector, T_mag] = controller(pos_i, v_b, omega_b, ctrl, R_ib, sim)
+function [T_cmd, T_mag] = controller(pos_i, v_b, omega_b, ctrl, R_ib, sim)
     % 3D velocity-direction PD control for sequential waypoint tracking
     % Inputs: pos_i = inertial position, v_b = body-frame velocity
     %         omega_b = body angular rate, ctrl = control options struct,
     %         R_ib = inertial->body rotation, sim = simulation struct
     % Outputs:
-    %   T_vector = [0; My; Mz] - torque in body frame y-z plane
+    %   T_cmd = [0; My; Mz] - torque in body frame y-z plane
     %   T_mag    = magnitude of the torque vector before any OAP scaling
 
     persistent wp_idx last_wp_idx print_counter;
@@ -59,7 +59,7 @@ function [T_vector, T_mag] = controller(pos_i, v_b, omega_b, ctrl, R_ib, sim)
     to_wp = wp - pos_i;
     dist = norm(to_wp);
     if dist < 1e-6
-        T_vector = [0; 0; 0];
+        T_cmd = [0; 0; 0];
         return;
     end
     desired_dir = to_wp / dist;
@@ -90,7 +90,7 @@ function [T_vector, T_mag] = controller(pos_i, v_b, omega_b, ctrl, R_ib, sim)
     else
         T_max = 0.05;      % maximum torque
         error_lim = pi/2;
-        Kd = 0;
+        Kd = 0.002;
     end
 
     G = T_max/error_lim;   % Gain
@@ -116,7 +116,8 @@ function [T_vector, T_mag] = controller(pos_i, v_b, omega_b, ctrl, R_ib, sim)
     Ty = min(max(Ty, -T_max), T_max);
     Tz = min(max(Tz, -T_max), T_max);
 
-    T_vector = [0; Ty; Tz];
+    T_cmd = [0; Ty; Tz];
+    T_cmdi = R_ib' * T_cmd;
 
     %fprintf('pos_i = [%g, %g, %g]\n', pos_i(1), pos_i(2), pos_i(3));
     %fprintf('wp = [%g, %g, %g]\n', wp(1), wp(2), wp(3));

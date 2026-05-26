@@ -155,8 +155,8 @@ function [F_b, M_b] = dynamics(t, v_b, omega_b, q, pos_i, R_ib, sim, u_error_int
     T_friction = sim.prop.f_coeff*(pi*sim.prop.rho*omega_b(1)^2*sim.prop.span^4*sim.prop.chord)*[1;0;0];
     
     % control
-    [T_vector, ~] = controller(pos_i, v_b, omega_b, sim.options.control, R_ib, sim);
-    T_control = sim.options.control.control_law(t, q, T_vector);
+    [T_cmd, ~] = controller(pos_i, v_b, omega_b, sim.options.control, R_ib, sim);
+    T_control = sim.options.control.control_law(t, q, T_cmd);
 
     % Add all the moments
     M_b = M_aero + Q_prop - T_friction + mBlades_Torque + sim.aero.Mext(t) + T_control;

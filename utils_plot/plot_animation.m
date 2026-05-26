@@ -70,27 +70,29 @@ hold(ax_anim,'on'); grid(ax_anim,'on');
 xlabel(ax_anim,'North (m)'); ylabel(ax_anim,'East (m)'); zlabel(ax_anim,'Down (m)');
 set(ax_anim,'YDir','reverse','ZDir','reverse'); % NED frame
 view(ax_anim,45,20);
-% Plot full trajectory
-plot3(ax_anim,pos_i(:,1),pos_i(:,2),pos_i(:,3),'c--','DisplayName','Trajectory');
+
+% Initialize empty trajectory line to be drawn dynamically
+traj_plot = plot3(ax_anim, NaN, NaN, NaN, 'r-', 'LineWidth', 2, 'DisplayName', 'Trajectory');
 
 %% --- Waypoint visualization ---
-if isfield(sim.options.control, 'waypoints')
-    wps = sim.options.control.waypoints;  % 3 x N
+if isfield(sim.options, 'control') && isfield(sim.options.control, 'waypoints')
+    wps = sim.options.control.waypoints;
+    if size(wps, 1) ~= 3
+        wps = wps';
+    end
+
     N_wp = size(wps, 2);
-    colors_wp = lines(N_wp);  % distinct color per waypoint
+    colors_wp = lines(N_wp);
 
     for k = 1:N_wp
         wx = wps(1,k); wy = wps(2,k); wz = wps(3,k);
-
-        % Sphere marker
         plot3(ax_anim, wx, wy, wz, 'o', ...
-            'MarkerSize', 12, ...
+            'MarkerSize', 10, ...
             'MarkerFaceColor', colors_wp(k,:), ...
             'MarkerEdgeColor', 'k', ...
-            'LineWidth', 1.2, ...
-            'DisplayName', sprintf('WP%d [%.0f,%.0f,%.0f]', k, wx, wy, wz));
+            'LineWidth', 1.1, ...
+            'DisplayName', sprintf('WP%d', k));
 
-        % Label offset slightly so it does not overlap the marker
         text(ax_anim, wx, wy, wz - sim.options.radius_visualization * 0.8, ...
             sprintf('  WP%d', k), ...
             'Color', colors_wp(k,:), ...
@@ -99,12 +101,12 @@ if isfield(sim.options.control, 'waypoints')
             'HitTest', 'off');
     end
 
-    % Connecting lines between waypoints (dashed, same color sequence)
     if isfield(sim.options.control, 'loop') && sim.options.control.loop
-        idx_seq = [1:N_wp, 1];  % close the loop
+        idx_seq = [1:N_wp, 1];
     else
         idx_seq = 1:N_wp;
     end
+
     for k = 1:length(idx_seq)-1
         a = wps(:, idx_seq(k));
         b = wps(:, idx_seq(k+1));
@@ -114,26 +116,30 @@ if isfield(sim.options.control, 'waypoints')
             'HandleVisibility', 'off');
     end
 
-    % Draw acceptance-radius circles (horizontal discs around each waypoint)
     if isfield(sim.options.control, 'waypoint_radius')
         r = sim.options.control.waypoint_radius;
-        theta_circ = linspace(0, 2*pi, 40);
+        theta_circ = linspace(0, 2*pi, 60);
         for k = 1:N_wp
             cx = wps(1,k) + r*cos(theta_circ);
             cy = wps(2,k) + r*sin(theta_circ);
-            cz = wps(3,k) * ones(1,40);
+            cz = wps(3,k) * ones(size(theta_circ));
             plot3(ax_anim, cx, cy, cz, '-', ...
-                'Color', [colors_wp(k,:), 0.35], ...
-                'LineWidth', 0.8, ...
+                'Color', colors_wp(k,:), ...
+                'LineWidth', 0.7, ...
                 'HandleVisibility', 'off');
         end
     end
 end
 
 %% --- 7. Compute extents (Uniform Box for Axis Equal) ---
-x_min = min(pos_i(:,1)); x_max = max(pos_i(:,1));
-y_min = min(pos_i(:,2)); y_max = max(pos_i(:,2));
-z_min = min(pos_i(:,3)); z_max = max(pos_i(:,3));
+extent_points = pos_i;
+if exist('wps', 'var')
+    extent_points = [extent_points; wps'];
+end
+
+x_min = min(extent_points(:,1)); x_max = max(extent_points(:,1));
+y_min = min(extent_points(:,2)); y_max = max(extent_points(:,2));
+z_min = min(extent_points(:,3)); z_max = max(extent_points(:,3));
 
 x_span = (x_max - x_min) + 2*r_magnified;
 y_span = (y_max - y_min) + 4*r_magnified;
@@ -225,6 +231,11 @@ update_plot(current_step);
         
         % Move everything instantly via the GPU
         set(tform_vehicle, 'Matrix', M);
+
+        % --- NEW: Update trajectory line up to the current timestep ---
+        set(traj_plot, 'XData', pos_i(1:i, 1), ...
+                       'YData', pos_i(1:i, 2), ...
+                       'ZData', pos_i(1:i, 3));
         
         set(title_h,'String',sprintf('t = %.2f s (step %d/%d)',t(i),i,num_steps));
         if num_steps>1, set(slider_h,'Value',i); end
