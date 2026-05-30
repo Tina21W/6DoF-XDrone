@@ -39,7 +39,7 @@ function [properties,aerodynamics,initialization] = x_Drone()
     properties.no_blades = 3;
     properties.design_RPM = 900;             % [RPM]
     properties.design_speed = 15;             % [m/s]
-    properties.f_coeff = 2e-2;              % friction torque coefficient
+    properties.f_coeff = 1.97e-2;              % friction torque coefficient
 
     %% ------------------------- Environmental Properties -----------------------------
     properties.rho = 1.225;
@@ -81,7 +81,7 @@ function [properties,aerodynamics,initialization] = x_Drone()
     properties.Prop.control.omega_max = 4000; % maximum relative prop speed magnitude [rad/s]
 
     % Velocity direction controller -- restored from old file for compatibility
-    properties.Direction_control.T_max = 0.1;    % maximum transverse control moment [Nm]
+    properties.Direction_control.T_max = 0.05;    % maximum transverse control moment [Nm]
     properties.Direction_control.error_lim = pi/4; % direction error for maximum moment [rad]
     properties.Direction_control.Kd = 0.002;       % angular-rate damping gain [Nm/(rad/s)]
 
@@ -150,8 +150,8 @@ function [properties,aerodynamics,initialization] = x_Drone()
     initialization.omega0 = [2*pi*initialization.Omega_mag, 0, 0];        % [p q r] [rad/s]
     initialization.euler0 = [deg2rad(0), deg2rad(initialization.launch_angle), deg2rad(0)]; % [yaw pitch roll]
     initialization.quat0 = eul2quat(initialization.euler0);               % [w x y z]
-    initialization.pos0 = [0 0 -50];                                      % inertial position [m]
+    initialization.pos0 = [0 0 -200];                                      % inertial position [m]
     initialization.u_error_int0 = 0;                                      % integral speed error [m]
-    initialization.tf = 20;                                               % maximum simulation time [s]
+    initialization.tf = 50;                                               % maximum simulation time [s]
 
 end

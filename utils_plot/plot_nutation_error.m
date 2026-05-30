@@ -79,18 +79,25 @@ function plot_nutation_error(t, x, sim, p)
     title('Euler-angle oscillation amplitude  \surd(\theta_{dev}^2 + \psi_{dev}^2)  [cross-check]');
     grid on;
     
-  % -- panel 3: Smoothed euler angles --
+    % -- panel 3: Smoothed euler angles --
     subplot(4,1,3);
     plot(t, rad2deg(theta_smooth), 'b', t, rad2deg(psi_smooth), 'r', 'LineWidth', 2);
     xlabel('Time [s]'); ylabel('Euler angles [deg]');
     title('Euler angles (low-pass smoothed — nutation removed)');
     grid on;
     
-  % -- panel 4: Roll rate --
-   subplot(4,1,4)
-   plot(t, p/(2*pi), 'r', 'LineWidth', 1.5);
-   xlabel('Time [s]'); ylabel('Angular Velocities [Hz]');
-   legend('p_{nr}'); 
-   grid on; title('Angular Velocity p (spin rate)');
+    % -- panel 4: Roll rate --
+    subplot(4,1,4)
+    plot(t, p/(2*pi), 'r', 'LineWidth', 1.5);
+    xlabel('Time [s]'); ylabel('Angular Velocities [Hz]');
+    legend('p_{nr}'); 
+    grid on; title('Angular Velocity p (spin rate)');
     
+    % -- Separate figure for only Panel 1 --
+    figure('Name', 'Nutation Angle');
+    plot(t, nutation_deg, 'b', 'LineWidth', 1.5);    
+    xlabel('Time [s]');
+    ylabel('Nutation angle [deg]');
+    title('Nutation angle: \angle(H, V_{b})');
+    grid on;
 end

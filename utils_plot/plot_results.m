@@ -44,16 +44,15 @@ function plot_results(t, x, sim, SIM_DATA)
     xlabel('Time [s]'); ylabel('Angular rates [Hz]');
     legend('p','q','r'); grid on; title('Body angular rates');
 
-    % 2b. Combined plot: body x-velocity `u` and roll rate `p`
-    figure('Name','u and p');
-    yyaxis left
-    h1 = plot(t, u, 'b', 'LineWidth', 1.5);
-    ylabel('u [m/s]');
-    yyaxis right
-    h2 = plot(t, p/(2*pi), 'r', 'LineWidth', 1.5);
-    ylabel('p [Hz]');
-    xlabel('Time [s]'); grid on; title('Body x-velocity (u) and roll rate (p)');
-    legend([h1, h2], 'u', 'p');
+    % 2b. Combined plot: body x-velocity `v_{b,x}` and roll rate `\omega_{b,x}`
+    figure('Name','v_{b,x} and \omega_{b,x}');
+    plot(t, u_nr, 'r', 'LineWidth', 1.5); hold on;
+    plot(t, p/(2*pi), 'green', 'LineWidth', 1.5);
+    hold off;
+    xlabel('Time [s]');
+    ylabel('v_{b,x} [m/s] and \omega_{b,x} [Hz]');
+    grid on; title('Body x-velocity (v_{b,x}) and spin rate (\omega_{b,x})');
+    legend('v_{b,x} [m/s]', '\omega_{b,x} [Hz]');
 
     % 3. Euler angles
     figure('Name','Euler Angles (without roll)');
@@ -116,6 +115,17 @@ function plot_results(t, x, sim, SIM_DATA)
             'MarkerFaceColor', 'y', ...
             'MarkerSize', 6, ...
             'DisplayName', 'Waypoints');
+
+        for k = 1:size(wps, 2)
+            text(wps(1,k) + 0.8, wps(2,k) + 0.8, wps(3,k) - 0.2, ...
+                sprintf('WP%d', k), ...
+                'Color', 'k', ...
+                'FontSize', 9, ...
+                'FontWeight', 'bold', ...
+                'HorizontalAlignment', 'left', ...
+                'VerticalAlignment', 'middle', ...
+                'Interpreter', 'none');
+        end
 
         if isfield(sim.options.control, 'loop') && sim.options.control.loop
             wps_line = [wps, wps(:,1)];
@@ -211,15 +221,15 @@ function plot_results(t, x, sim, SIM_DATA)
         grid on; title('Moments in body frame');
 
         % Controller torque vector before OAP
-        figure('Name', 'Controller torque vector y/z')
+        figure('Name', 'Command Torque Magnitude')
         hold on
-        plot(SIM_DATA.t, SIM_DATA.T_cmd_y, 'g', 'LineWidth', 1.5);
-        plot(SIM_DATA.t, SIM_DATA.T_cmd_z, 'b', 'LineWidth', 1.5);
-        plot(SIM_DATA.t, SIM_DATA.T_cmd_mag, 'k', 'LineWidth', 1.5);
-        plot(SIM_DATA.t, SIM_DATA.T_cmdi, 'r', 'LineWidth', 1.5);
+        %plot(SIM_DATA.t, SIM_DATA.T_cmd_y, 'g', 'LineWidth', 1.5);
+        %plot(SIM_DATA.t, SIM_DATA.T_cmd_z, 'b', 'LineWidth', 1.5);
+        plot(SIM_DATA.t, SIM_DATA.T_cmd_mag, 'm', 'LineWidth', 1.5);
+        %plot(SIM_DATA.t, SIM_DATA.T_cmdi, 'r', 'LineWidth', 1.5);
         xlabel('Time [s]'); ylabel('Torque [Nm]');
-        legend('T_{cmd,y}','T_{cmd,z}','|T_{cmd}|','T_{cmdi}');
-        grid on; title('Controller torque vector components before OAP');
+        legend('|T_{cmd}|');
+        grid on; title('Command Torque Magnitude');
 
     end
 

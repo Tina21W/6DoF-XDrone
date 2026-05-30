@@ -42,17 +42,17 @@ sim.options.control.control_law = @OAP;    % choose @OAP or @SPL
 
 %% ------------- TRAJECTORY DEFINITION -----------------------------------
 % >>>  CHANGE THIS ONE LINE to switch trajectory  <<<
-%      Options: 'figure8' | 'hstep' | 'vstep' | 'straight'
-trajectory = 'straight';
+%      Options: 'figure8' | 'hstep' | 'vstep' | 'straight' | 'vsmoothstep'
+trajectory = 'vstep';
 
-R  = 45;   % circle radius [m]  — scales figure8 and circle
-z0 = -50;  % altitude [m, NED]  — must match sim.initial.pos0(3)
+R  = 30;   % circle radius [m]  — scales figure8 and circle
+z0 = -200;  % altitude [m, NED]  — must match sim.initial.pos0(3)
 
 loop = true;  % whether to cycle through waypoints continuously
 
 switch trajectory
 
-    case 'figure8'
+    case 'figure8' % 30 sec
         % 12-point horizontal figure-8.  Two CCW tangent circles.
         % Drone launches at [0,0] heading +x; right lobe centre [0,+R].
         % 270° (right lobe) and 90° (left lobe) are the crossing points — skipped.
@@ -73,28 +73,45 @@ switch trajectory
             R*cosd(135), -R + R*sind(135),  z0;   % wp12
         ];
 
-    case 'hstep'
+    case 'hstep' % 25 sec
         % Horizontal (lateral) step.
         % Fly +x 100 m, side-step +y 50 m, resume +x 100 m at new offset.
         % Tests lateral position response at constant altitude.
         wp = [
             100,   0,  z0;   % hs1 — end of initial straight leg
-            100,  150,  z0;   % hs2 — end of side-step  (step input)
-            500,  150,  z0;   % hs3 — resume forward at new lateral offset
+            100,  100,  z0;   % hs2 — end of side-step  (step input)
+            200,  100,  z0;   % hs3 — resume forward at new lateral offset
+            250,  100,  z0;   % hs4 — resume forward at new lateral offset
             
         ];
+        loop = false
 
-    case 'vstep'
+    case 'vstep' % 50 sec
         % Vertical (altitude) step.
         % Fly +x 100 m, climb 15 m, resume +x 100 m at new altitude.
         % NED convention: more-negative z = higher altitude.
         wp = [
             100,   0,   z0;   % vs1 — end of initial leg   (15 m AGL)
-            100,   0,  -250;   % vs2 — top of climb         (30 m AGL, +15 m step)
-            350,   0,  -250;   % vs3 — cruise at new altitude
-            350,   0,   z0;
-            500,   0,   z0;
+            100,   0,  z0-100;   % vs2 — top of climb         (30 m AGL, +15 m step)
+            200,   0,  z0-100;   % vs3 — cruise at new altitude
+            200,   0,  z0;
+            300,   0,   z0;
         ];
+        loop = false
+
+    case 'vsmoothstep'
+        % Vertical (altitude) step.
+        % Fly +x 100 m, climb 15 m, resume +x 100 m at new altitude.
+        % NED convention: more-negative z = higher altitude.
+        wp = [
+            100,   0,   z0;   % vs1 — end of initial leg   (15 m AGL)
+            100,   0,  z0-100;   % vs2 — top of climb         (30 m AGL, +15 m step)
+            200,   0,  z0-100;   % vs3 — cruise at new altitude
+            250,   0,   z0;
+            450,   0,   z0;
+            600,   0,   z0;
+        ];
+        loop = false
 
     case 'straight'
         % Straight-line trajectory at constant altitude.
