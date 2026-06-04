@@ -82,7 +82,7 @@ function SIM_DATA = compute_logged_data(t, x, sim)
         prop_omega_cmd = sim.prop.Prop.omega * ones(1, N);
         if isfield(sim.prop.Prop, 'control')
             prop_control = sim.prop.Prop.control;
-            u_des = prop_control.u_des;
+            u_des = prop_control.u_des .* cos(alpha_eq);
             if isfield(sim.options, 'control') && isfield(sim.options.control, 'u_des')
                 u_des = sim.options.control.u_des;
             end
@@ -145,16 +145,20 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     T_cmd_mag = zeros(1, N);
     T_cmdi = zeros(3, N);
     T_control = zeros(3, N);
+    T_vec = zeros(3, N);
+    alpha_target = zeros(1, N);
+    beta_target = zeros(1, N);
+    delta = zeros(1, N);
     if isfield(sim, 'options') && isfield(sim.options, 'control') && isfield(sim.options.control, 'control_law')
-        clear controller;
+        clear direction_controller waypoint_manager;
         for i = 1:N
             pos_i = x(i, 11:13)';
             v_b = [u(i); v(i); w(i)];
             omega_b = [p(i); q(i); r(i)];
             R_ib_i = squeeze(R_ib(:, :, i));
-            [T_cmd(:, i), T_cmd_mag(i)] = controller(pos_i, v_b, omega_b, sim.options.control, R_ib_i, sim);
-            T_cmdi(:, i) = R_ib_i' * T_cmd(:, i);
-            T_control(:, i) = sim.options.control.control_law(t(i), q_norm(i, :), T_cmd(:, i));
+            q_i = q_norm(i, :)';
+            [T_mag(i), T_mag_undamped(i), alpha_target(i), beta_target(i), delta(i)] = direction_controller(pos_i, v_b, omega_b, sim.options.control, R_ib_i, sim, q_i); 
+            [T_control(:, i)] = OAP(t(i),  q_norm(i, :), T_mag(i), alpha_target(i), beta_target(i), delta(i), R_ib_i, sim);
         end
     end
 
@@ -213,12 +217,12 @@ function SIM_DATA = compute_logged_data(t, x, sim)
     SIM_DATA.Mx_b = Mx_b'; 
     SIM_DATA.My_b = My_b'; 
     SIM_DATA.Mz_b = Mz_b';
-    SIM_DATA.T_cmd_y = T_cmd(2, :)';
-    SIM_DATA.T_cmd_z = T_cmd(3, :)';
-    SIM_DATA.T_cmd_mag = T_cmd_mag(:);
-    SIM_DATA.T_cmdi = sqrt(T_cmdi(1, :).^2 + T_cmdi(2, :).^2 + T_cmdi(3, :).^2)';
-    SIM_DATA.T_control_y = T_control(2, :)';
-    SIM_DATA.T_control_z = T_control(3, :)';
+    SIM_DATA.T_mag = T_mag';
+    SIM_DATA.T_mag_undamped = T_mag_undamped';
+    SIM_DATA.alpha_target = alpha_target';
+    SIM_DATA.beta_target = beta_target';
+    SIM_DATA.delta = delta';
+    SIM_DATA.T_control = T_control(2, :)';
     
     SIM_DATA.CL = C_L'; SIM_DATA.CD = C_D'; SIM_DATA.Cm = C_m';
     SIM_DATA.no_sdslip_angle = no_sdslip_angle'; 

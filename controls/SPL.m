@@ -1,6 +1,6 @@
 %%% Swashplateless rotor
 
-function [T_control] = SPL(t, q, T_vector)
+function [T_control, T_vec] = SPL(t, q, T_vector, varargin)
 
     % mode 1: Euler-roll version, breaks near the poles
     % mode 2: twist-quaternion version, breaks near 180 deg
@@ -39,5 +39,6 @@ function [T_control] = SPL(t, q, T_vector)
 
     T_ds = T_vector;           % T < 0.005 !!!
     T_control = R_bds' * T_ds;
+    T_vec = T_vector;
 
 end

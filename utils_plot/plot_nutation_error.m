@@ -100,4 +100,17 @@ function plot_nutation_error(t, x, sim, p)
     ylabel('Nutation angle [deg]');
     title('Nutation angle: \angle(H, V_{b})');
     grid on;
+
+    % --- Zoomed inset ---
+    t_zoom = [2.0 3.0];
+    idx = t >= t_zoom(1) & t <= t_zoom(2);
+
+    axes('Position', [0.58 0.55 0.30 0.30]);
+    box on;
+    plot(t(idx), nutation_deg(idx), 'b', 'LineWidth', 1.2);
+    grid on;
+    xlim(t_zoom);
+    ylim([min(nutation_deg(idx)), max(nutation_deg(idx))]);
+    title('Zoom');
+    set(gca, 'FontSize', 8);
 end

@@ -66,10 +66,30 @@ function plot_results(t, x, sim, SIM_DATA)
     hold on
     % plot(SIM_DATA.t, rad2deg(SIM_DATA.alpha), 'LineWidth', 1.5);
     % plot(SIM_DATA.t, rad2deg(SIM_DATA.beta), 'LineWidth', 1.5);
-    plot(SIM_DATA.t, rad2deg(SIM_DATA.alpha_equivalent), 'LineWidth', 1.5);
+    h1 = plot(SIM_DATA.t, rad2deg(SIM_DATA.alpha_equivalent), 'LineWidth', 1.5);
+    if isfield(SIM_DATA, 'alpha_target')
+        h2 = plot(SIM_DATA.t, rad2deg(SIM_DATA.alpha_target), '--', 'LineWidth', 1.5);
+        legend([h1, h2], '\alpha_{equivalent}', '\alpha_{target}');
+    else
+        legend(h1, '\alpha_{equivalent}');
+    end
     xlabel('Time [s]'); ylabel('Aerodynamic angles [deg]');
-    legend('\alpha_{equivalent}');
     grid on; title('Aerodynamic angles');
+
+    if isfield(SIM_DATA, 'delta') && isfield(SIM_DATA, 'alpha_target')
+        figure('Name','Angular Error and Target Roll');
+        plot(t, rad2deg(SIM_DATA.delta), 'r', 'LineWidth', 1.5); hold on;
+        plot(t, rad2deg(SIM_DATA.alpha_target), 'b--', 'LineWidth', 1.5);
+        if isfield(SIM_DATA, 'beta_target')
+            plot(t, rad2deg(SIM_DATA.beta_target), 'g-.', 'LineWidth', 1.5);
+            legend('\delta (error)', '\alpha_{target}', '\beta_{target}');
+        else
+            legend('\delta (error)', '\alpha_{target}');
+        end
+        hold off;
+        xlabel('Time [s]'); ylabel('Angle [deg]');
+        grid on; title('Angular error \delta and target roll \alpha');
+    end
     
     % 5. Aero coefficients
     figure('Name', 'Aero coefficients')
@@ -220,16 +240,49 @@ function plot_results(t, x, sim, SIM_DATA)
         legend('M_x','M_y','M_z');
         grid on; title('Moments in body frame');
 
-        % Controller torque vector before OAP
-        figure('Name', 'Command Torque Magnitude')
-        hold on
-        %plot(SIM_DATA.t, SIM_DATA.T_cmd_y, 'g', 'LineWidth', 1.5);
-        %plot(SIM_DATA.t, SIM_DATA.T_cmd_z, 'b', 'LineWidth', 1.5);
-        plot(SIM_DATA.t, SIM_DATA.T_cmd_mag, 'm', 'LineWidth', 1.5);
-        %plot(SIM_DATA.t, SIM_DATA.T_cmdi, 'r', 'LineWidth', 1.5);
-        xlabel('Time [s]'); ylabel('Torque [Nm]');
-        legend('|T_{cmd}|');
-        grid on; title('Command Torque Magnitude');
+
+        % OAP torque vectors
+        if isfield(SIM_DATA, 'T_mag') && isfield(SIM_DATA, 'T_control')
+            figure('Name', 'OAP T_{mag} vs T_{control}')
+            hold on
+            plot(SIM_DATA.t, SIM_DATA.T_mag, 'b', 'LineWidth', 1.5);
+            plot(SIM_DATA.t, SIM_DATA.T_mag_undamped, 'k', 'LineWidth', 1.5);
+            %plot(SIM_DATA.t, SIM_DATA.T_control, 'r', 'LineWidth', 1.5);
+            hold off
+
+            xlabel('Time [s]');
+            ylabel('Torque magnitude [Nm]');
+            legend('|T_{mag}|','|T_{mag,undamped}|', '|T_{control}|');
+            grid on;
+            title('OAP torque vectors');
+
+            % --- Zoomed inset ---
+            t_zoom = [2.0 3.0];   % choose time window [s]
+            idx = SIM_DATA.t >= t_zoom(1) & SIM_DATA.t <= t_zoom(2);
+
+            axes('Position', [0.58 0.55 0.30 0.30]);
+            box on;
+            hold on
+            plot(SIM_DATA.t(idx), SIM_DATA.T_mag(idx), 'b', 'LineWidth', 1.0);
+            plot(SIM_DATA.t(idx), SIM_DATA.T_mag_undamped(idx), 'k', 'LineWidth', 1.0);
+            plot(SIM_DATA.t(idx), SIM_DATA.T_control(idx), 'r', 'LineWidth', 1.0);
+            hold off
+
+            grid on;
+            xlim(t_zoom);
+
+            y_zoom = [
+                SIM_DATA.T_mag(idx);
+                SIM_DATA.T_mag_undamped(idx);
+                SIM_DATA.T_control(idx)
+            ];
+
+            y_pad = 0.05 * max(range(y_zoom), 1e-6);
+            ylim([min(y_zoom) - y_pad, max(y_zoom) + y_pad]);
+
+            title('Zoom');
+            set(gca, 'FontSize', 8);
+        end
 
     end
 

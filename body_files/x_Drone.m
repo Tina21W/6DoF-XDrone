@@ -53,7 +53,7 @@ function [properties,aerodynamics,initialization] = x_Drone()
     % properties.Motor.* does not fail or double-count mass/inertia.
 
     % Negative RPM = counter-rotating relative to XDrone spin
-    Prop_rpm = -17500;                        % [RPM]
+    Prop_rpm = -12759;                        % [RPM]
     properties.Prop.omega = 2*pi/60 * Prop_rpm; % [rad/s]
     properties.Prop.mass = 5.928e-3;          % combined prop+motor mass [kg]
     properties.Prop.CoG_pos = [8.231e-3; 0; 0]; % combined prop+motor CoG [m]
@@ -73,17 +73,17 @@ function [properties,aerodynamics,initialization] = x_Drone()
     properties.Prop.k_Q_0 = properties.Prop.k_P_0/(2*pi);
 
     % Propeller speed controller -- restored from old file for compatibility
-    properties.Prop.control.omega_Kp = 1200;  % proportional gain [(rad/s)/(m/s)]
-    properties.Prop.control.omega_Ki = 500;   % integral gain [(rad/s)/(m)]
-    properties.Prop.control.int_min = -5;     % minimum integrated speed error [m]
-    properties.Prop.control.int_max = 5;      % maximum integrated speed error [m]
+    properties.Prop.control.omega_Kp = 500;  % proportional gain [(rad/s)/(m/s)]
+    properties.Prop.control.omega_Ki = 200;   % integral gain [(rad/s)/(m)]
+    properties.Prop.control.int_min = -2;     % minimum integrated speed error [m]
+    properties.Prop.control.int_max = 2;      % maximum integrated speed error [m]
     properties.Prop.control.omega_min = 0;    % minimum relative prop speed magnitude [rad/s]
     properties.Prop.control.omega_max = 4000; % maximum relative prop speed magnitude [rad/s]
 
     % Velocity direction controller -- restored from old file for compatibility
-    properties.Direction_control.T_max = 0.05;    % maximum transverse control moment [Nm]
-    properties.Direction_control.error_lim = pi/4; % direction error for maximum moment [rad]
-    properties.Direction_control.Kd = 0.002;       % angular-rate damping gain [Nm/(rad/s)]
+    properties.Direction_control.T_max = 0.05;      % maximum transverse control moment [Nm]
+    properties.Direction_control.error_lim = pi/6; % direction error for maximum moment [rad]
+    properties.Direction_control.Kd = 0.005;        % angular-rate damping gain [Nm/(rad/s)]
 
     % Motor compatibility block.  The new file already includes motor mass and
     % inertia in properties.Prop, so these fields are intentionally zeroed to
@@ -126,7 +126,7 @@ function [properties,aerodynamics,initialization] = x_Drone()
     [properties.alpha_trim, properties.V_trim, properties.Thrust_req] = calculate_trim(...
         properties.percentage_CoG_total, properties.mass_total*properties.g, properties.rho, ...
         properties.Area, aerodynamics.Xzylo.C_L, aerodynamics.Xzylo.C_D, aerodynamics.Xzylo.CoP_frac);
-    properties.Prop.control.u_des = properties.V_trim; % desired body x-axis speed from trim [m/s]
+    properties.Prop.control.u_des = properties.V_trim; % desired body speed from trim [m/s]
 
     % ------------------------- Motor Blades Aerodynamics -----------------------------
     [V_GRID, RPM_GRID, Torque_Map, Drag_Map] = generate_turbine_maps(properties);
@@ -140,18 +140,18 @@ function [properties,aerodynamics,initialization] = x_Drone()
     aerodynamics.Mext = @(t) (t >= 0 && t <= 30) * [0; 0; 0];
 
     % ------------------------- Initialization states ---------------------------------
-    initialization.launch_angle = 0;          % launch angle in degrees
-    initialization.V_mag = 13;                % magnitude of the launch velocity [m/s]
-    initialization.Omega_mag = 13;            % rotational speed at launch [RPS]
-    initialization.AoA = 0;
+    initialization.launch_angle = rad2deg(properties.alpha_trim);          % launch angle in degrees
+    initialization.V_mag = properties.V_trim;               % magnitude of the launch velocity [m/s]
+    initialization.Omega_mag = 12.85;            % rotational speed at launch [RPS]
+    initialization.AoA = rad2deg(properties.alpha_trim);
 
     initialization.v0 = [initialization.V_mag*cosd(initialization.AoA), 0, ...
                          initialization.V_mag*sind(initialization.AoA)]; % [u v w] [m/s]
     initialization.omega0 = [2*pi*initialization.Omega_mag, 0, 0];        % [p q r] [rad/s]
     initialization.euler0 = [deg2rad(0), deg2rad(initialization.launch_angle), deg2rad(0)]; % [yaw pitch roll]
     initialization.quat0 = eul2quat(initialization.euler0);               % [w x y z]
-    initialization.pos0 = [0 0 -200];                                      % inertial position [m]
+    initialization.pos0 = [0 0 -600];                                      % inertial position [m]
     initialization.u_error_int0 = 0;                                      % integral speed error [m]
-    initialization.tf = 50;                                               % maximum simulation time [s]
+    initialization.tf = 20;                                               % maximum simulation time [s]
 
 end

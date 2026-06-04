@@ -1,4 +1,4 @@
-function [v_dot_b, omega_dot_b, q_dot, pos_dot_i, u_error_int_dot] = kinematics(v_b, omega_b, F_b, M_b, q, R_bi, sim, u_error_int)
+function [v_dot_b, omega_dot_b, q_dot, pos_dot_i, u_error_int_dot] = kinematics(v_b, omega_b, F_b, M_b, q, R_bi, sim, u_error_int, alpha_equivalent)
 % KINEMATICS Compute translational and rotational derivatives for 6DoF
 %
 % Inputs:
@@ -29,7 +29,7 @@ function [v_dot_b, omega_dot_b, q_dot, pos_dot_i, u_error_int_dot] = kinematics(
     if sim.options.propeller_on
             H_Motor = sim.prop.Motor.I * omega_b; 
             
-            prop_omega_cmd = prop_speed_controller(v_b, sim, u_error_int);
+            prop_omega_cmd = prop_speed_controller(v_b, sim, u_error_int, alpha_equivalent);
             omega_rotor = [prop_omega_cmd; 0; 0] + omega_b; % Prop omega is relative to drone
             
             H_Prop = sim.prop.Prop.I * omega_rotor;
@@ -50,7 +50,7 @@ function [v_dot_b, omega_dot_b, q_dot, pos_dot_i, u_error_int_dot] = kinematics(
 
     % 5. Speed-error integral for propeller PI control
     if isfield(sim.prop.Prop, 'control')
-        u_error = sim.prop.Prop.control.u_des - v_b(1);
+        u_error = sim.prop.Prop.control.u_des*cos(alpha_equivalent) - v_b(1);
         if isfield(sim.options, 'control') && isfield(sim.options.control, 'u_des')
             u_error = sim.options.control.u_des - v_b(1);
         end
