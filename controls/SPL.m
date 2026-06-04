@@ -1,3 +1,5 @@
+%%% Not used %%%
+
 %%% Swashplateless rotor
 
 function [T_control, T_vec] = SPL(t, q, T_vector, varargin)
