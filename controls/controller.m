@@ -1,3 +1,5 @@
+%%% No longer used %%%
+
 function [T_cmd, T_mag] = controller(pos_i, v_b, omega_b, ctrl, R_ib, sim)
     % 3D velocity-direction PD control for sequential waypoint tracking
     % Inputs: pos_i = inertial position, v_b = body-frame velocity
