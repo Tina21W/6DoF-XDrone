@@ -42,7 +42,7 @@ sim.options.control.control_law = @OAP;    % choose @OAP or @SPL
 
 %% ------------- TRAJECTORY DEFINITION -----------------------------------
 % Options: 'figure8' | 'hstep' | 'up' | 'straight' | 'down'
-trajectory = 'down';
+trajectory = 'hstep';
 
 trajectory_control = manoeuvres(trajectory, sim);
 
