@@ -4,7 +4,7 @@ function control = manoeuvres(trajectory, sim)
 % Options:
 %   'figure8' | 'hstep' | 'vstep' | 'straight' | 'down'
 
-    R  = 30;                  % circle radius [m]
+    R  = 10;                  % circle radius [m]
     z0 = sim.initial.pos0(3); % altitude [m, NED]
 
     loop = true;
@@ -67,6 +67,6 @@ function control = manoeuvres(trajectory, sim)
     end
 
     control.waypoints = wp';
-    control.waypoint_radius = 30.0;
+    control.waypoint_radius = 10.0;
     control.loop = loop;
 end
